@@ -1,0 +1,18 @@
+{
+  "name": "job-ingestion",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Resilient job-listing ingestion from public sources",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "fast-xml-parser": "^4.5.1"
+  }
+}
