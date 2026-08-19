@@ -1,0 +1,35 @@
+# render.yaml -- Render Blueprint for this service.
+#
+# Committed rather than clicked through the dashboard so the deployment is
+# reproducible and reviewable: someone can read this file and know exactly how
+# the demo is hosted, instead of taking my word for it.
+
+services:
+  - type: web
+    name: job-ingestion
+    runtime: node
+    plan: free
+    region: oregon
+
+    buildCommand: npm ci
+    startCommand: npm start
+
+    # Hits /healthz, not /api/health. /healthz reports whether the PROCESS is
+    # alive; /api/health reports whether the DATA is good. Pointing the deploy
+    # check at the second one would mean a single degraded source could fail an
+    # otherwise perfect deploy and roll it back.
+    healthCheckPath: /healthz
+
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+
+      # 10 minutes. These feeds change hourly at most, so polling faster would
+      # add load to someone else's free API for no extra information.
+      - key: INGEST_INTERVAL_MS
+        value: "600000"
+
+      # Goes out in our User-Agent on every request, so a source operator who
+      # wants to identify or contact this client can.
+      - key: CONTACT_URL
+        value: https://github.com/Rohityadav3637/job-ingestion-demo

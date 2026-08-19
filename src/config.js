@@ -85,7 +85,7 @@ export const config = {
     // Where a curious sysadmin can find out who we are, used by the honest
     // identity pool. Overridable so the deployed instance can point at the
     // real repo.
-    contactUrl: process.env.CONTACT_URL || 'https://github.com/Rohityadav3637/job-ingestion',
+    contactUrl: process.env.CONTACT_URL || 'https://github.com/Rohityadav3637/job-ingestion-demo',
   },
 
   // --- Per-source defaults ------------------------------------------------
