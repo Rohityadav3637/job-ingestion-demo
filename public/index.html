@@ -1,9 +1,91 @@
+<!--
+  The dashboard.
+
+  This page exists to make failure VISIBLE. Its job is not to look busy -- it
+  is to answer, at a glance and honestly: is each source working, when did it
+  last really succeed, how many jobs are we actually holding, and if something
+  is wrong, what and why.
+
+  Plain HTML/CSS/JS with no build step and no framework. Every line here is
+  something I can explain, it loads instantly on a cold free-tier instance, and
+  the project is graded on ingestion -- a React bundle would be weight in the
+  wrong place.
+-->
 <title>Job Ingestion Monitor</title>
-<h1>Job Ingestion Monitor</h1>
-<p>Dashboard arrives in stage 10. API is live:</p>
-<ul>
-  <li><a href="/api/health">/api/health</a></li>
-  <li><a href="/api/jobs">/api/jobs</a></li>
-  <li><a href="/api/sources">/api/sources</a></li>
-  <li><a href="/api/events">/api/events</a></li>
-</ul>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="/style.css" />
+
+<header class="topbar">
+  <div class="topbar-left">
+    <h1>Job Ingestion Monitor</h1>
+    <p class="subtitle">
+      Live listings from three public sources, with the pipeline's own health on display.
+    </p>
+  </div>
+  <div class="topbar-right">
+    <button id="run-now" class="btn btn-primary">Run ingest now</button>
+    <button id="reset-all" class="btn">Reset everything</button>
+    <span id="refresh-note" class="refresh-note">refreshing every 5s</span>
+  </div>
+</header>
+
+<!-- The single headline. Goes amber the moment ANY source is unhealthy: an
+     aggregate reporting OK while a third of its inputs are dead would be the
+     same dishonesty this project is built to avoid. -->
+<section id="overall" class="overall">
+  <div class="overall-status" id="overall-status">LOADING</div>
+  <div class="overall-facts">
+    <span><strong id="total-jobs">-</strong> jobs held</span>
+    <span><strong id="source-count">-</strong> sources</span>
+    <span id="unhealthy-note"></span>
+    <span class="muted" id="next-run"></span>
+  </div>
+</section>
+
+<!-- Only rendered when chaos is armed. Injected failures must never be
+     mistakable for real ones on the page that is supposed to prove honesty. -->
+<section id="chaos-banner" class="chaos-banner hidden"></section>
+
+<main>
+  <h2>Sources</h2>
+  <div id="sources" class="source-grid"></div>
+
+  <div class="two-col">
+    <section>
+      <h2>
+        Listings
+        <span class="count-pill" id="jobs-count"></span>
+      </h2>
+      <div class="job-controls">
+        <input id="search" type="search" placeholder="Filter by title, company or location…" />
+        <select id="source-filter">
+          <option value="">All sources</option>
+        </select>
+      </div>
+      <div id="jobs" class="jobs"></div>
+    </section>
+
+    <section>
+      <h2>Activity log</h2>
+      <p class="hint">
+        Every run writes an entry, including the boring ones. Silence is not evidence of health.
+      </p>
+      <div id="events" class="events"></div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <!-- Remote OK's API terms require a mention and a followable link back.
+       Rendered as a real link with no rel="nofollow", because a project about
+       respecting sources should honour the one explicit request its sources
+       make. -->
+  <p id="attribution"></p>
+  <p class="muted">
+    Sources are public job APIs and RSS feeds that permit programmatic access. No login-walled
+    content, no CAPTCHA circumvention, no LinkedIn/Indeed/Naukri. robots.txt checked by hand
+    2026-08-19 — see <code>/api/sources</code>.
+  </p>
+</footer>
+
+<script src="/app.js"></script>
