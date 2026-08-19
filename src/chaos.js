@@ -28,6 +28,7 @@
 // special-cases, not the system. This one exercises the real code path.
 
 import { addEvent } from './store.js';
+import { config } from './config.js';
 
 export const CHAOS_MODES = {
   OFF: 'off',
@@ -93,6 +94,7 @@ export function describeChaos() {
       mode: entry.mode,
       description: DESCRIPTIONS[entry.mode],
       armedAt: new Date(entry.armedAt).toISOString(),
+      expiresInMs: Math.max(0, config.chaos.autoDisarmMs - (Date.now() - entry.armedAt)),
       injectedCount: entry.injectedCount,
     };
   }
@@ -112,6 +114,20 @@ export function isArmed(sourceId) {
 export function intercept(sourceId) {
   const entry = armed.get(sourceId);
   if (!entry) return null;
+
+  // Self-disarm. Checked here rather than on a timer so there is no background
+  // work and nothing to leak -- the same lazy-evaluation reasoning as the
+  // token bucket refill.
+  if (Date.now() - entry.armedAt > config.chaos.autoDisarmMs) {
+    armed.delete(sourceId);
+    addEvent({
+      level: 'info',
+      sourceId,
+      message: 'Chaos mode auto-disarmed',
+      detail: `expired after ${Math.round(config.chaos.autoDisarmMs / 60000)} minutes; real requests resume`,
+    });
+    return null;
+  }
 
   entry.injectedCount += 1;
 

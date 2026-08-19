@@ -57,6 +57,18 @@ export const config = {
     staggerMs: 2000,
   },
 
+  // --- Chaos mode ---------------------------------------------------------
+  chaos: {
+    // Armed chaos disarms itself after this long.
+    //
+    // WHY: the chaos endpoints are open on a public demo, because a reviewer
+    // has to be able to click them. That means anyone can leave a source
+    // broken -- including me, mid-demo, on the wrong tab. Auto-expiry makes
+    // the damage self-healing: whatever state the demo is left in, it returns
+    // to serving real data within five minutes without anyone intervening.
+    autoDisarmMs: 5 * 60 * 1000,
+  },
+
   // --- Identity rotation --------------------------------------------------
   identity: {
     // How many requests one identity is used for before we rotate.
@@ -165,4 +177,5 @@ export const config = {
 Object.freeze(config);
 Object.freeze(config.ingest);
 Object.freeze(config.identity);
+Object.freeze(config.chaos);
 Object.freeze(config.defaults);

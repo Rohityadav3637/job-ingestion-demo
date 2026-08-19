@@ -160,7 +160,9 @@ export async function runSource(sourceId) {
  *   2. a source whose breaker is open is skipped in microseconds instead of
  *      burning three timeouts, so a dead source costs the run almost nothing
  *   3. jobs from the healthy sources still serve the request, and the summary
- *      names which sources carried it
+ *      names which sources carried it -- separating FRESH contributions from
+ *      STALE ones, so "375 jobs" never hides that a third of them are an hour
+ *      old because their source is circuit-open
  *
  * That last point is why this returns servedBy/failedOver rather than a bare
  * array: the dashboard has to be able to say "Remote OK is down, these 275
@@ -177,7 +179,13 @@ export async function runAll({ reason = 'scheduled' } = {}) {
     results.push(await runSource(source.id));
   }
 
-  const servedBy = results.filter((r) => r.jobCount > 0).map((r) => r.id);
+  // Three distinct groups, because "served by" alone was ambiguous: a
+  // circuit-open source still contributes jobs from the store, so listing it
+  // under servedBy read as "we fetched from it successfully" when we had not
+  // sent it a single request. Splitting fresh from stale keeps the summary
+  // honest about WHICH jobs are current.
+  const servedFresh = results.filter((r) => r.status === STATUS.HEALTHY && r.jobCount > 0).map((r) => r.id);
+  const servedStale = results.filter((r) => r.status !== STATUS.HEALTHY && r.jobCount > 0).map((r) => r.id);
   const failedOver = results.filter((r) => r.status !== STATUS.HEALTHY).map((r) => r.id);
   const totalJobs = results.reduce((sum, r) => sum + r.jobCount, 0);
 
@@ -188,7 +196,8 @@ export async function runAll({ reason = 'scheduled' } = {}) {
     totalJobs,
     sourcesRun: results.length,
     healthy: results.filter((r) => r.status === STATUS.HEALTHY).length,
-    servedBy,
+    servedFresh,
+    servedStale,
     failedOver,
   };
 
@@ -197,7 +206,7 @@ export async function runAll({ reason = 'scheduled' } = {}) {
   if (failedOver.length === 0) {
     store.addEvent({
       level: 'info',
-      message: `Ingest run complete: ${totalJobs} jobs from ${servedBy.length} sources`,
+      message: `Ingest run complete: ${totalJobs} jobs from ${servedFresh.length} sources`,
       detail: `${summary.durationMs}ms, triggered by ${reason}`,
     });
   } else {
@@ -205,8 +214,9 @@ export async function runAll({ reason = 'scheduled' } = {}) {
       level: 'warn',
       message: `Ingest run degraded: ${failedOver.length} of ${results.length} sources unhealthy`,
       detail:
-        `Unhealthy: ${failedOver.join(', ')}. Failing over -- ${totalJobs} jobs still served ` +
-        `by ${servedBy.join(', ') || 'no sources'}.`,
+        `Unhealthy: ${failedOver.join(', ')}. Failing over -- ${totalJobs} jobs still served, ` +
+        `fresh from ${servedFresh.join(', ') || 'no sources'}` +
+        (servedStale.length ? `, stale from ${servedStale.join(', ')}` : '') + '.',
     });
   }
 
