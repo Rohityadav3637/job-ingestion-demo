@@ -4,7 +4,7 @@ A resilient ingestion pipeline that pulls live job listings from three public
 sources, normalises them into one schema, and — the actual point — **makes its
 own failures visible instead of hiding them**.
 
-**Live demo:** _(add URL after deploy)_
+**Live demo:** https://job-ingestion-hgqi.onrender.com
 **Design document:** [DESIGN.md](DESIGN.md) · **Decisions:** [DECISIONS.md](DECISIONS.md)
 
 ---
@@ -61,7 +61,7 @@ source on demand. Faults are injected **inside our own client**, before the
 network call — no request is sent to the real source while chaos is armed.
 
 ```bash
-# 1. Everything healthy
+# 1. Everything healthy   (swap in the live URL to run this against production)
 curl localhost:3000/api/health | jq '.overall, .totalJobs'
 
 # 2. Break a source: it starts returning 403
